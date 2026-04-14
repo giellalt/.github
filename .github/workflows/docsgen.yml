@@ -1,0 +1,105 @@
+---
+name: Docs
+on:
+  workflow_call:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Derive repo type
+        id: meta
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          REPO_TYPE="${REPO_NAME%%-*}"
+          echo "repo-type=$REPO_TYPE" >> "$GITHUB_OUTPUT"
+          echo "Detected repo type: $REPO_TYPE"
+
+      # --- Checkout giella-core (lang + shared only) ---
+      - name: Checkout giella-core
+        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        uses: actions/checkout@v6
+        with:
+          repository: giellalt/giella-core
+          path: giella-core
+
+      # --- Checkout the repo itself ---
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
+      # --- Lang/shared build ---
+      - name: Install minimal dependencies
+        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        run: sudo apt-get update && sudo apt-get install -y gawk bc autoconf
+
+      - name: Build giella-core
+        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        env:
+          TERM: dumb
+        run: cd giella-core && ./autogen.sh && ./configure --disable-configure-errors && make
+
+      - name: Generate docs
+        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        env:
+          TERM: dumb
+        run: |
+          cd repo
+          ./autogen.sh
+          mkdir -p build && cd build
+          ../configure --without-hfst --without-foma --disable-configure-errors
+          make -C docs
+
+      # --- Keyboard build ---
+      - name: Set up Python
+        if: steps.meta.outputs.repo-type == 'keyboard'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        if: steps.meta.outputs.repo-type == 'keyboard'
+        run: pip install -r docs/requirements.txt
+        working-directory: repo
+
+      - name: Generate layout documentation
+        if: steps.meta.outputs.repo-type == 'keyboard'
+        run: python docs/scripts/generate-layout-docs.py
+        working-directory: repo
+
+      # --- Mermaid processing ---
+      - name: Get list of doc files
+        id: getfile
+        run: |
+          echo "files=$(find repo/docs -name '*.md' | xargs)" >> "$GITHUB_OUTPUT"
+
+      - name: Compile mermaid
+        uses: divvun/compile-mermaid-markdown-action@main
+        with:
+          files: ${{ steps.getfile.outputs.files }}
+          output: 'repo/docs/mermaid-svgs'
+        env:
+          HIDE_CODEBLOCKS: 1
+          ABSOLUTE_IMAGE_LINKS:
+          OUTPUT_FILE_TYPE: "svg"
+
+      # --- Deploy ---
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: repo/docs/
+          destination: ./_site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v5
