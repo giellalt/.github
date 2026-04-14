@@ -88,6 +88,17 @@ jobs:
           ABSOLUTE_IMAGE_LINKS:
           OUTPUT_FILE_TYPE: "svg"
 
+      # --- Escape Liquid tags in generated docs ---
+      - name: Escape Liquid syntax in generated markdown
+        if: steps.meta.outputs.repo-type == 'lang'
+        run: |
+          LANG_CODE="${{ github.event.repository.name }}"
+          LANG_CODE="${LANG_CODE#lang-}"
+          GENERATED="repo/docs/${LANG_CODE}.md"
+          if [ -f "$GENERATED" ]; then
+            sed -i 's/{%/{{ "{%" }}/g' "$GENERATED"
+          fi
+
       # --- Deploy ---
       - name: Setup Pages
         uses: actions/configure-pages@v6
