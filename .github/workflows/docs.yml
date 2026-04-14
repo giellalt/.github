@@ -17,9 +17,9 @@ jobs:
           echo "repo-type=$REPO_TYPE" >> "$GITHUB_OUTPUT"
           echo "Detected repo type: $REPO_TYPE"
 
-      # --- Checkout giella-core (lang + shared only) ---
+      # --- Checkout giella-core (lang only) ---
       - name: Checkout giella-core
-        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        if: steps.meta.outputs.repo-type == 'lang'
         uses: actions/checkout@v6
         with:
           repository: giellalt/giella-core
@@ -33,19 +33,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: repo
 
-      # --- Lang/shared build ---
+      # --- Lang build ---
       - name: Install minimal dependencies
-        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        if: steps.meta.outputs.repo-type == 'lang'
         run: sudo apt-get update && sudo apt-get install -y gawk bc autoconf
 
       - name: Build giella-core
-        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        if: steps.meta.outputs.repo-type == 'lang'
         env:
           TERM: dumb
         run: cd giella-core && ./autogen.sh && ./configure --disable-configure-errors && make
 
       - name: Generate docs
-        if: steps.meta.outputs.repo-type == 'lang' || steps.meta.outputs.repo-type == 'shared'
+        if: steps.meta.outputs.repo-type == 'lang'
         env:
           TERM: dumb
         run: |
