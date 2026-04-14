@@ -29,6 +29,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: repo
 
       # --- Lang/shared build ---
