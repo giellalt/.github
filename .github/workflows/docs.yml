@@ -88,13 +88,6 @@ jobs:
           ABSOLUTE_IMAGE_LINKS:
           OUTPUT_FILE_TYPE: "svg"
 
-      # --- Escape Liquid tags in generated docs ---
-      - name: Escape Liquid syntax in generated markdown
-        run: |
-          find repo/docs -name '*.md' -exec grep -l '{%' {} + 2>/dev/null | while read f; do
-            sed -i 's/{%/{{ "{%" }}/g' "$f"
-          done
-
       # --- Deploy ---
       - name: Setup Pages
         uses: actions/configure-pages@v6
