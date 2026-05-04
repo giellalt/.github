@@ -98,6 +98,9 @@ jobs:
           source: repo/docs/
           destination: ./_site
 
+      - name: Index with Pagefind
+        run: npx -y pagefind --site ./_site
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
 
