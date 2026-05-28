@@ -11,7 +11,7 @@ jobs:
         with:
           fetch-depth: '2'
           persist-credentials: 'true'
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         with:
           script: |
             const commits = ${{ toJSON(github.event.commits) }}
