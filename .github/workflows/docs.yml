@@ -73,6 +73,19 @@ jobs:
         run: python docs/scripts/generate-layout-docs.py
         working-directory: repo
 
+      # --- Mark generated docs so the theme suppresses "Edit on GitHub" ---
+      - name: Mark generated docs
+        run: |
+          cd repo
+          while IFS= read -r f; do
+            git ls-files --error-unmatch "$f" 2>/dev/null && continue
+            if [ "$(head -1 "$f")" = "---" ]; then
+              sed -i '1a generated: true' "$f"
+            else
+              { printf '---\ngenerated: true\n---\n\n'; cat "$f"; } > "$f.tmp" && mv "$f.tmp" "$f"
+            fi
+          done < <(find docs -name '*.md')
+
       # --- Mermaid processing ---
       - name: Get list of doc files
         id: getfile
