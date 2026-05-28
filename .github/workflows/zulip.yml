@@ -43,7 +43,7 @@ jobs:
           done
           echo "$EOF" >> $GITHUB_OUTPUT
       - name: Send a stream message
-        uses: zulip/github-actions-zulip/send-message@v1
+        uses: zulip/github-actions-zulip/send-message@v2
         with:
           api-key: ${{ secrets.ZULIP_API_KEY }}
           email: "github-2-bot@giella.zulipchat.com"
