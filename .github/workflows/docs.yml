@@ -56,23 +56,6 @@ jobs:
           ../configure --without-hfst --without-foma --disable-configure-errors
           make -C docs
 
-      # --- Keyboard build ---
-      - name: Set up Python
-        if: steps.meta.outputs.repo-type == 'keyboard'
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.x'
-
-      - name: Install Python dependencies
-        if: steps.meta.outputs.repo-type == 'keyboard'
-        run: pip install -r docs/requirements.txt
-        working-directory: repo
-
-      - name: Generate layout documentation
-        if: steps.meta.outputs.repo-type == 'keyboard'
-        run: python docs/scripts/generate-layout-docs.py
-        working-directory: repo
-
       # Generated docs are marked at generation time (giella-core
       # am-shared/docs-dir-include.am injects `generated: true` front matter via
       # scripts/mark-generated.awk), so no git-based marking step is needed.
