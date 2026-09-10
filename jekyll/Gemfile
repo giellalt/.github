@@ -1,0 +1,43 @@
+source "https://rubygems.org"
+
+# Canonical Gemfile for the shared GiellaLT docs build (.github/workflows/docs.yml).
+#
+# GitHub Pages' own builder / actions/jekyll-build-pages only allow a frozen
+# plugin whitelist pinned to Jekyll 3.10, so the workflow builds with
+# `bundle exec jekyll build` against this file instead. That unlocks Jekyll 4
+# and jekyll-minifier (HTML + JS minification; CSS is handled by
+# `sass: style: compressed`, see _ci_overrides.yml).
+#
+# Consumer repos keep their own docs/Gemfile for local `jekyll serve`; CI does
+# not use it (jekyll-build-pages never did either). Any plugin a consumer lists
+# in docs/_config.yml must be available here.
+
+gem "jekyll", "~> 4.3"
+gem "jekyll-sass-converter", "~> 3.0"  # Dart Sass; Jekyll 4 drops the old Ruby Sass
+
+# Ruby 3.4 removed these from the default gems; harmless earlier.
+gem "base64"
+gem "bigdecimal"
+gem "csv"
+gem "webrick"
+gem "kramdown-parser-gfm"
+
+group :jekyll_plugins do
+  # Auto-loaded for every docs build, regardless of the consumer's plugins: list.
+  gem "jekyll-minifier"
+end
+
+# Available to any consumer that lists them in docs/_config.yml `plugins:`.
+gem "jekyll-remote-theme"
+gem "jekyll-seo-tag"
+gem "jekyll-github-metadata"
+gem "jekyll-include-cache"
+gem "jemoji"
+gem "jekyll-optional-front-matter"
+gem "jekyll-redirect-from"
+gem "jekyll-relative-links"
+gem "jekyll-titles-from-headings"
+gem "jekyll-default-layout"
+gem "jekyll-readme-index"
+gem "jekyll-sitemap"
+gem "jekyll-gist"

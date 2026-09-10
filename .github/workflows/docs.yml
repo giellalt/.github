@@ -138,21 +138,54 @@ jobs:
             fi
           done
 
-      # --- Deploy ---
+      # --- Build ---
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v6
 
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
+      # The shared Jekyll build config (Gemfile + config overlay). GitHub Pages'
+      # own builder only allows a frozen plugin set on Jekyll 3.10; building with
+      # `bundle exec` against this Gemfile instead gets us Jekyll 4 and
+      # jekyll-minifier (HTML + JS minification; CSS via sass: style: compressed).
+      - name: Check out the shared Jekyll build config
+        uses: actions/checkout@v6
         with:
-          source: repo/docs/
-          destination: ./_site
+          repository: giellalt/.github
+          path: ci
+          sparse-checkout: jekyll
+          sparse-checkout-cone-mode: false
+
+      - name: Stage the build Gemfile
+        run: cp ci/jekyll/Gemfile ci/jekyll/Gemfile.lock .
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Build with Jekyll
+        working-directory: repo          # so jekyll-github-metadata sees .git (build_revision)
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
+          JEKYLL_ENV: production
+          PAGES_REPO_NWO: ${{ github.repository }}
+        run: |
+          # url/baseurl from the Pages deployment (not jekyll-github-metadata,
+          # which has no token here and would misresolve them).
+          cat > "$RUNNER_TEMP/pages.yml" <<EOF
+          url: "${{ steps.pages.outputs.origin }}"
+          baseurl: "${{ steps.pages.outputs.base_path }}"
+          EOF
+          bundle exec jekyll build \
+            --source docs \
+            --destination "$GITHUB_WORKSPACE/_site" \
+            --config docs/_config.yml,"$GITHUB_WORKSPACE/ci/jekyll/_ci_overrides.yml","$RUNNER_TEMP/pages.yml"
 
       - name: Index with Pagefind
-        run: |
-          sudo chown -R $USER:$USER ./_site
-          npx -y pagefind --site ./_site
+        run: npx -y pagefind --site ./_site
 
+      # --- Deploy ---
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
 
