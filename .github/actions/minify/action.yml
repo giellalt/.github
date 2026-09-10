@@ -1,0 +1,23 @@
+name: Minify built site
+description: >
+  Minify HTML (whitespace/comments), standalone CSS and standalone JS in a built
+  Jekyll site. Intended to run after the Jekyll build and before Pagefind
+  indexing. Failures on individual files are logged and skipped, never fatal.
+
+inputs:
+  path:
+    description: Path to the built site directory
+    required: false
+    default: _site
+
+runs:
+  using: composite
+  steps:
+    - name: Install minifier dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --no-audit --no-fund
+
+    - name: Minify
+      shell: bash
+      run: node "${{ github.action_path }}/minify.mjs" "${{ inputs.path }}"

@@ -1,0 +1,15 @@
+{
+  "name": "giellalt-docs-minify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Post-build HTML/CSS/JS minification for the shared GiellaLT docs pipeline",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@minify-html/node": "0.16.4",
+    "csso": "5.0.5",
+    "terser": "5.44.0"
+  }
+}

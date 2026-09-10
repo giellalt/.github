@@ -148,10 +148,21 @@ jobs:
           source: repo/docs/
           destination: ./_site
 
+      # jekyll-build-pages runs in a container and leaves _site root-owned;
+      # take it back before anything else writes to it.
+      - name: Take ownership of the built site
+        run: sudo chown -R "$USER:$USER" ./_site
+
+      # Minify before Pagefind so it indexes (and ships) the smaller files.
+      # GitHub Pages' builder allows no custom gems, so this is a post-build
+      # pass rather than a Jekyll plugin. Never fatal on a single bad file.
+      - name: Minify HTML, CSS and JS
+        uses: giellalt/.github/.github/actions/minify@main
+        with:
+          path: ./_site
+
       - name: Index with Pagefind
-        run: |
-          sudo chown -R $USER:$USER ./_site
-          npx -y pagefind --site ./_site
+        run: npx -y pagefind --site ./_site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
