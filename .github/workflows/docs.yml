@@ -172,6 +172,18 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
+      # Resolve our own ref so the self-checkout below always matches — even
+      # on a branch — without a caller needing to tell us. github.workflow_ref
+      # for a job running inside a *called* reusable workflow reports that
+      # called workflow's own repo/ref, e.g.
+      #   giellalt/.github/.github/workflows/docs.yml@refs/heads/some-branch
+      # regardless of what ref the caller itself is on.
+      - name: Resolve this workflow's own ref
+        id: self
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: echo "ref=${WORKFLOW_REF#*@}" >> "$GITHUB_OUTPUT"
+
       # The shared Jekyll build config (Gemfile + config overlay). GitHub Pages'
       # own builder only allows a frozen plugin set on Jekyll 3.10; building with
       # `bundle exec` against this Gemfile instead gets us Jekyll 4 and
@@ -180,6 +192,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: giellalt/.github
+          ref: ${{ steps.self.outputs.ref }}
           path: ci
           sparse-checkout: jekyll
           sparse-checkout-cone-mode: false
