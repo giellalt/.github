@@ -66,10 +66,11 @@ jobs:
       # private repo can't: that host needs auth and sends no CORS header, and
       # shields.io can't read the repo either. So for a private repo we embed a
       # snapshot of the branch into the built site (further down) and the theme
-      # loads it same-origin. jekyll-github-metadata can't be trusted for
-      # `private` here (no token passed to the Jekyll build), so resolve it once
-      # with gh and hand it + the canonical owner/repo to the theme via
-      # _data/ci.yml.
+      # loads it same-origin. That staging decision has to be made before the
+      # Jekyll build even runs, so jekyll-github-metadata's site.github.private
+      # (which the build step now resolves with an authenticated token) isn't
+      # available yet — resolve `private` once here with gh instead, and hand
+      # it + the canonical owner/repo to the theme via _data/ci.yml.
       - name: Detect repo visibility
         id: vis
         env:
