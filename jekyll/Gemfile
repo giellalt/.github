@@ -41,3 +41,7 @@ gem "jekyll-default-layout"
 gem "jekyll-readme-index"
 gem "jekyll-sitemap"
 gem "jekyll-gist"
+
+# Not a Jekyll plugin — available for repo-owned `prebuild_script`s to use
+# directly (e.g. a script that pre-fetches GitHub repo data via the API).
+gem "octokit"

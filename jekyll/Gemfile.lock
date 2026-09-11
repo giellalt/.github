@@ -253,6 +253,7 @@ DEPENDENCIES
   jekyll-titles-from-headings
   jemoji
   kramdown-parser-gfm
+  octokit
   webrick
 
 CHECKSUMS
