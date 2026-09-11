@@ -172,27 +172,23 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      # Resolve our own ref so the self-checkout below always matches — even
-      # on a branch — without a caller needing to tell us. github.workflow_ref
-      # for a job running inside a *called* reusable workflow reports that
-      # called workflow's own repo/ref, e.g.
-      #   giellalt/.github/.github/workflows/docs.yml@refs/heads/some-branch
-      # regardless of what ref the caller itself is on.
-      - name: Resolve this workflow's own ref
-        id: self
-        env:
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-        run: echo "ref=${WORKFLOW_REF#*@}" >> "$GITHUB_OUTPUT"
-
       # The shared Jekyll build config (Gemfile + config overlay). GitHub Pages'
       # own builder only allows a frozen plugin set on Jekyll 3.10; building with
       # `bundle exec` against this Gemfile instead gets us Jekyll 4 and
       # jekyll-minifier (HTML + JS minification; CSS via sass: style: compressed).
+      #
+      # repository/ref come from the `job` context, not `github` — github.repository
+      # and github.workflow_ref both stay pinned to the root/caller workflow even
+      # inside a called reusable workflow (confirmed the hard way). job.workflow_repository
+      # and job.workflow_sha are the fields GitHub added specifically to identify the
+      # reusable workflow file actually executing this job, so this self-checkout
+      # always matches whatever ref this workflow was itself called at — @main, a
+      # branch, a tag, a pinned SHA — with nothing for a caller to keep in sync.
       - name: Check out the shared Jekyll build config
         uses: actions/checkout@v6
         with:
-          repository: giellalt/.github
-          ref: ${{ steps.self.outputs.ref }}
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
           path: ci
           sparse-checkout: jekyll
           sparse-checkout-cone-mode: false
