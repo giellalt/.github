@@ -219,9 +219,17 @@ jobs:
           BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
           JEKYLL_ENV: production
           PAGES_REPO_NWO: ${{ github.repository }}
+          # jekyll-github-metadata reads this. Without it, it (and any Liquid
+          # that touches live repo data, e.g. a page rendering contributors
+          # for many repos) hits the GitHub API anonymously — 60 req/hr and
+          # quick to trip abuse detection, instead of 5000 req/hr. Doesn't
+          # make site.github.private any more trustworthy for a private repo
+          # — _data/ci.yml (resolved above with this same token) is what the
+          # theme actually reads for that.
+          JEKYLL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # url/baseurl from the Pages deployment (not jekyll-github-metadata,
-          # which has no token here and would misresolve them).
+          # url/baseurl from the Pages deployment, not jekyll-github-metadata
+          # (keeps them right regardless of whether it's authenticated).
           cat > "$RUNNER_TEMP/pages.yml" <<EOF
           url: "${{ steps.pages.outputs.origin }}"
           baseurl: "${{ steps.pages.outputs.base_path }}"
