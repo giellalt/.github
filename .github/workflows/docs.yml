@@ -234,7 +234,7 @@ jobs:
           url: "${{ steps.pages.outputs.origin }}"
           baseurl: "${{ steps.pages.outputs.base_path }}"
           EOF
-          bundle exec jekyll build \
+          bundle exec jekyll build --verbose \
             --source "${{ inputs.docs_dir }}" \
             --destination "$GITHUB_WORKSPACE/_site" \
             --config "${{ inputs.docs_dir }}/_config.yml","$GITHUB_WORKSPACE/ci/jekyll/_ci_overrides.yml","$RUNNER_TEMP/pages.yml"
