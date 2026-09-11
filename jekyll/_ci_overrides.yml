@@ -1,0 +1,16 @@
+# Merged on top of each repo's docs/_config.yml by the shared CI build
+# (.github/workflows/docs.yml). Local `jekyll serve` in a consumer repo does not
+# see this file.
+
+# CSS: compress at the Sass stage. jekyll-minifier's CSS minifier (cssminify2)
+# corrupts var(--x) inside calc(), so it is disabled below and this covers CSS.
+sass:
+  style: compressed
+  sourcemap: never
+
+jekyll-minifier:
+  compress_css: false
+  # assets/typosreport/ is the vendored wasm-bindgen output of the accuracy
+  # viewer (a build artifact committed in the theme) — leave it untouched.
+  exclude:
+    - '*typosreport*'
