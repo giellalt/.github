@@ -14,8 +14,10 @@ on:
           owns, run before the Jekyll build. For repo-specific prep — fetching
           data, building Slidev decks, whatever — that doesn't belong in the
           shared workflow. The script installs any extra tools it needs
-          itself; Ruby (with the shared Gemfile) is already set up by the time
-          it runs. Left empty (the default), nothing runs.
+          itself; Ruby (with the repo's own docs Gemfile) is already set up
+          by the time it runs — if the script needs a gem beyond what the
+          theme already pulls in (e.g. octokit), add it to that Gemfile.
+          Left empty (the default), nothing runs.
         type: string
         default: ''
       postbuild_script:
@@ -173,10 +175,14 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      # The shared Jekyll build config (Gemfile + config overlay). GitHub Pages'
-      # own builder only allows a frozen plugin set on Jekyll 3.10; building with
-      # `bundle exec` against this Gemfile instead gets us Jekyll 4 and
-      # jekyll-minifier (HTML + JS minification; CSS via sass: style: compressed).
+      # CI-only config overlay merged on top of the repo's own docs/_config.yml
+      # (compressed Sass, minifier excludes — see jekyll/_ci_overrides.yml).
+      # The dependency side of this used to live here too (a shared Gemfile
+      # this workflow staged into every repo, out of sync with each repo's own
+      # docs/Gemfile used for local `jekyll serve`). Now that jekyll-theme-giellalt
+      # is a gem declaring its own dependencies, a repo's docs/Gemfile just
+      # depends on that gem and IS what this workflow builds with — no staging,
+      # so local and CI are structurally the same file.
       #
       # repository/ref come from the `job` context, not `github` — github.repository
       # and github.workflow_ref both stay pinned to the root/caller workflow even
@@ -185,7 +191,7 @@ jobs:
       # reusable workflow file actually executing this job, so this self-checkout
       # always matches whatever ref this workflow was itself called at — @main, a
       # branch, a tag, a pinned SHA — with nothing for a caller to keep in sync.
-      - name: Check out the shared Jekyll build config
+      - name: Check out the shared CI build-config overlay
         uses: actions/checkout@v6
         with:
           repository: ${{ job.workflow_repository }}
@@ -194,14 +200,12 @@ jobs:
           sparse-checkout: jekyll
           sparse-checkout-cone-mode: false
 
-      - name: Stage the build Gemfile
-        run: cp ci/jekyll/Gemfile ci/jekyll/Gemfile.lock .
-
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
+          working-directory: repo/${{ inputs.docs_dir }}
 
       # Repo-owned prep this workflow has no business knowing about — fetching
       # data, building Slidev decks, whatever. See the `prebuild_script` input.
@@ -209,7 +213,7 @@ jobs:
         if: inputs.prebuild_script != ''
         working-directory: repo
         env:
-          BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
+          BUNDLE_GEMFILE: ${{ github.workspace }}/repo/${{ inputs.docs_dir }}/Gemfile
           JEKYLL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash "${{ inputs.prebuild_script }}"
@@ -217,7 +221,7 @@ jobs:
       - name: Build with Jekyll
         working-directory: repo          # so jekyll-github-metadata sees .git (build_revision)
         env:
-          BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
+          BUNDLE_GEMFILE: ${{ github.workspace }}/repo/${{ inputs.docs_dir }}/Gemfile
           JEKYLL_ENV: production
           PAGES_REPO_NWO: ${{ github.repository }}
           JEKYLL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
