@@ -14,8 +14,10 @@ on:
           owns, run before the Jekyll build. For repo-specific prep — fetching
           data, building Slidev decks, whatever — that doesn't belong in the
           shared workflow. The script installs any extra tools it needs
-          itself; Ruby (with the shared Gemfile) is already set up by the time
-          it runs. Left empty (the default), nothing runs.
+          itself; Ruby (with the repo's own docs Gemfile) is already set up
+          by the time it runs — if the script needs a gem beyond what the
+          theme already pulls in (e.g. octokit), add it to that Gemfile.
+          Left empty (the default), nothing runs.
         type: string
         default: ''
       postbuild_script:
@@ -173,19 +175,8 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      # The shared Jekyll build config (Gemfile + config overlay). GitHub Pages'
-      # own builder only allows a frozen plugin set on Jekyll 3.10; building with
-      # `bundle exec` against this Gemfile instead gets us Jekyll 4 and
-      # jekyll-minifier (HTML + JS minification; CSS via sass: style: compressed).
-      #
-      # repository/ref come from the `job` context, not `github` — github.repository
-      # and github.workflow_ref both stay pinned to the root/caller workflow even
-      # inside a called reusable workflow (confirmed the hard way). job.workflow_repository
-      # and job.workflow_sha are the fields GitHub added specifically to identify the
-      # reusable workflow file actually executing this job, so this self-checkout
-      # always matches whatever ref this workflow was itself called at — @main, a
-      # branch, a tag, a pinned SHA — with nothing for a caller to keep in sync.
-      - name: Check out the shared Jekyll build config
+      # Check out the build settings overrides used by CI (minify, etc)
+      - name: Check out the shared CI build-config overrides
         uses: actions/checkout@v6
         with:
           repository: ${{ job.workflow_repository }}
@@ -194,22 +185,18 @@ jobs:
           sparse-checkout: jekyll
           sparse-checkout-cone-mode: false
 
-      - name: Stage the build Gemfile
-        run: cp ci/jekyll/Gemfile ci/jekyll/Gemfile.lock .
-
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
+          working-directory: repo/${{ inputs.docs_dir }}
 
-      # Repo-owned prep this workflow has no business knowing about — fetching
-      # data, building Slidev decks, whatever. See the `prebuild_script` input.
       - name: Repo-specific pre-build hook
         if: inputs.prebuild_script != ''
         working-directory: repo
         env:
-          BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
+          BUNDLE_GEMFILE: ${{ github.workspace }}/repo/${{ inputs.docs_dir }}/Gemfile
           JEKYLL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash "${{ inputs.prebuild_script }}"
@@ -217,7 +204,7 @@ jobs:
       - name: Build with Jekyll
         working-directory: repo          # so jekyll-github-metadata sees .git (build_revision)
         env:
-          BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
+          BUNDLE_GEMFILE: ${{ github.workspace }}/repo/${{ inputs.docs_dir }}/Gemfile
           JEKYLL_ENV: production
           PAGES_REPO_NWO: ${{ github.repository }}
           JEKYLL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -236,14 +223,11 @@ jobs:
       - name: Index with Pagefind
         run: npx -y pagefind --site ./_site
 
-      # Runs after Pagefind so repo-specific content merged in here (e.g. a
-      # pre-built Slidev deck) isn't expected to already be indexed by it.
       - name: Repo-specific post-build hook
         if: inputs.postbuild_script != ''
         working-directory: repo
         run: bash "${{ inputs.postbuild_script }}"
 
-      # --- Deploy ---
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
 
