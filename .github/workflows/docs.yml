@@ -175,7 +175,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      # CI-only config overlay merged on top of the repo's own docs/_config.yml
+      # CI-only config overrides merged on top of the repo's own docs/_config.yml
       # (compressed Sass, minifier excludes — see jekyll/_ci_overrides.yml).
       # The dependency side of this used to live here too (a shared Gemfile
       # this workflow staged into every repo, out of sync with each repo's own
@@ -191,7 +191,7 @@ jobs:
       # reusable workflow file actually executing this job, so this self-checkout
       # always matches whatever ref this workflow was itself called at — @main, a
       # branch, a tag, a pinned SHA — with nothing for a caller to keep in sync.
-      - name: Check out the shared CI build-config overlay
+      - name: Check out the shared CI build-config overrides
         uses: actions/checkout@v6
         with:
           repository: ${{ job.workflow_repository }}
