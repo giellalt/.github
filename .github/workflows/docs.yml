@@ -98,7 +98,7 @@ jobs:
           cd repo
           ./autogen.sh
           mkdir -p build && cd build
-          ../configure --without-hfst --without-foma --disable-configure-errors
+          ../configure --without-hfst --without-foma --disable-configure-errors --enable-docs
           make -C docs
 
       # Generated docs are marked at generation time (giella-core
