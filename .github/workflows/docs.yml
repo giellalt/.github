@@ -99,7 +99,7 @@ jobs:
           ./autogen.sh
           mkdir -p build && cd build
           ../configure --without-hfst --without-foma --disable-configure-errors
-          make -C docs
+          make docs
 
       # Generated docs are marked at generation time (giella-core
       # am-shared/docs-dir-include.am injects `generated: true` front matter via
